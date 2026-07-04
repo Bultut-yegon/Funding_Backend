@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.models.opportunity import Opportunity
 from app.ml.classifier import classify_opportunity
 
-# ── 1. Opportunity Desk RSS ──────────────────────────────────────────────────
+#1. Opportunity Desk RSS ──────────────────────────────────────────────────
 
 FEEDS = [
     "https://opportunitydesk.org/feed/",
@@ -54,7 +54,7 @@ def scrape_rss_feeds(db: Session):
     return added
 
 
-# ── 2. ReliefWeb API (UN-backed, free, no key needed) ───────────────────────
+#2. ReliefWeb API (UN-backed, free, no key needed)
 
 def scrape_reliefweb(db: Session):
     added = 0

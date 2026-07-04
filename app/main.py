@@ -69,7 +69,8 @@ app = FastAPI(title="Funding Platform API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://funding-frontend-orcin.vercel.app/"],
+    allow_origins=["http://localhost:3000", 
+                   "https://funding-frontend-orcin.vercel.app/"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -83,4 +84,4 @@ app.include_router(notifications.router, prefix="/api/notifications", tags=["not
 
 @app.get("/")
 def root():
-    return {"message": "Funding Platform API is running"}
+    return {"message": "Funding Platform API is running well"}

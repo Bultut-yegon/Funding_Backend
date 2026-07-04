@@ -59,7 +59,7 @@ async def send_opportunity_email(user: User, opportunities: list):
     """
 
     message = MessageSchema(
-        subject="🎯 New funding opportunities matched for you",
+        subject="Notice from FundingHub :New funding opportunities matched for you",
         recipients=[user.email],
         body=html,
         subtype="html",
