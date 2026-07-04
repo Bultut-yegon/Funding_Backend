@@ -55,6 +55,21 @@ from app.api import recommendations
 from app.api import notifications
 from app.api import profile as profile_router
 from app.services.scheduler import start_scheduler
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+
+
+
+
+class CORSFixMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["Access-Control-Allow-Origin"] = "https://funding-frontend-orcin.vercel.app"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return response
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -67,6 +82,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Funding Platform API", lifespan=lifespan)
 
+app.add_middleware(CORSFixMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", 
