@@ -7,7 +7,7 @@
    # return {"message": "Opportunities endpoint - coming soon"}
 
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.db.database import get_db
@@ -20,6 +20,7 @@ router = APIRouter()
 @router.get("/", response_model=List[OpportunityOut])
 def list_opportunities(
     category: Optional[str] = None,
+    search: Optional[str] = Query(None),
     skip: int = 0,
     limit: int = 20,
     db: Session = Depends(get_db),
@@ -27,6 +28,10 @@ def list_opportunities(
     query = db.query(Opportunity)
     if category:
         query = query.filter(Opportunity.category == category)
+    if search:
+        query = query.filter(Opportunity.title.ilike(f"%{search}%"),
+                             Opportunity.description.ilike(f"%{search}%"),
+                             Opportunity.source.ilike(f"%{search}%"))
     return query.offset(skip).limit(limit).all()
 
 @router.get("/{opportunity_id}", response_model=OpportunityOut)

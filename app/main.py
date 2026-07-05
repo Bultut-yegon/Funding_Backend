@@ -12,6 +12,8 @@ from app.api import recommendations
 from app.api import notifications
 from app.api import profile as profile_router
 from app.services.scheduler import start_scheduler
+from app.models import bookmark as bookmark_model
+from app.api import bookmarks
 
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
