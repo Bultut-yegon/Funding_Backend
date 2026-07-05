@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     MAIL_FROM: str = ""
     MAIL_SERVER: str = "smtp.gmail.com"
     MAIL_PORT: int = 587
+    ANTHROPIC_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
 
 
     class Config:

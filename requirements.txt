@@ -17,3 +17,5 @@ apscheduler
 fastapi-mail
 scikit-learn
 numpy
+google-genai
+groq

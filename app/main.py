@@ -14,7 +14,7 @@ from app.api import profile as profile_router
 from app.services.scheduler import start_scheduler
 from app.models import bookmark as bookmark_model
 from app.api import bookmarks
-
+from app.api import proposals
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://funding-frontend-orcin.vercel.app",
@@ -65,6 +65,7 @@ app.include_router(opportunities.router, prefix="/api/opportunities", tags=["opp
 app.include_router(recommendations.router, prefix="/api/recommendations", tags=["recommendations"])
 app.include_router(profile_router.router, prefix="/api/profile", tags=["profile"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
+app.include_router(proposals.router, prefix="/api/proposals", tags=["proposals"])
 
 @app.get("/")
 def root():
