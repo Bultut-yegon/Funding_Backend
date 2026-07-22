@@ -10,3 +10,5 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     role = Column(String, default="user")
     created_at = Column(DateTime, server_default=func.now())
+    reset_token = Column(String, nullable=True, index=True)
+    reset_token_expires = Column(DateTime, nullable=True)

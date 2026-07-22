@@ -19,6 +19,12 @@ from app.api import admin
 from app.api import predictor
 from app.models import analytics as analytics_model
 from app.api import analytics
+from slowapi import Limiter
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+
+
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://funding-frontend-orcin.vercel.app",
@@ -32,6 +38,17 @@ async def lifespan(app: FastAPI):
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Funding Platform API", lifespan=lifespan)
+
+# Rate limiting setup
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request, exc):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Please try again later."},
+    )
 
 # Handle preflight OPTIONS requests manually
 @app.middleware("http")
@@ -57,6 +74,10 @@ async def cors_handler(request: Request, call_next):
     return response
 
 app.add_middleware(
+    SlowAPIMiddleware,
+)
+
+app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
@@ -64,9 +85,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(opportunities.router, prefix="/api/opportunities", tags=["opportunities"])
 app.include_router(recommendations.router, prefix="/api/recommendations", tags=["recommendations"])
+app.include_router(bookmarks.router, prefix="/api/bookmarks", tags=["bookmarks"])
 app.include_router(profile_router.router, prefix="/api/profile", tags=["profile"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
 app.include_router(proposals.router, prefix="/api/proposals", tags=["proposals"])

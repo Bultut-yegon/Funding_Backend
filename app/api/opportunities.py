@@ -9,6 +9,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from typing import List, Optional
 from app.db.database import get_db
 from app.models.opportunity import Opportunity
@@ -29,9 +30,12 @@ def list_opportunities(
     if category:
         query = query.filter(Opportunity.category == category)
     if search:
-        query = query.filter(Opportunity.title.ilike(f"%{search}%"),
-                             Opportunity.description.ilike(f"%{search}%"),
-                             Opportunity.source.ilike(f"%{search}%"))
+        like = f"%{search}%"
+        query = query.filter(or_(
+            Opportunity.title.ilike(like),
+            Opportunity.description.ilike(like),
+            Opportunity.source.ilike(like),
+        ))
     return query.offset(skip).limit(limit).all()
 
 @router.get("/{opportunity_id}", response_model=OpportunityOut)
