@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
     start_scheduler()
     yield
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Funding Platform API", lifespan=lifespan)
 
