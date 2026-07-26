@@ -19,3 +19,4 @@ scikit-learn
 numpy
 google-genai
 groq
+slowapi

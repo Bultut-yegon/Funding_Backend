@@ -1,5 +1,5 @@
-from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from app.core.config import settings
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from app.models.notification import Notification
 from app.models.user import User
 from app.models.opportunity import Opportunity
@@ -47,7 +47,7 @@ async def send_opportunity_email(user: User, opportunities: list):
         <p style="color:#6b7280;">We found new funding opportunities that match your profile:</p>
         {opp_list}
         <div style="text-align:center; margin-top:24px;">
-            <a href="http://localhost:3000/recommendations"
+            <a href="{settings.FRONTEND_URL}/recommendations"
                style="background:#4f46e5; color:white; padding:12px 28px; border-radius:8px; text-decoration:none; font-weight:600;">
                View all recommendations
             </a>

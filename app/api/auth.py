@@ -25,8 +25,8 @@ from app.core.security import (
 from app.core.config import settings
 from app.services.email_service import send_password_reset_email
 
-import secrets
-from app.services.notification_service import send_password_reset_email
+# import secrets
+# from app.services.notification_service import send_password_reset_email
 
 
 RESET_TOKEN_EXPIRE_MINUTES = 30

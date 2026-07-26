@@ -17,3 +17,4 @@ apscheduler
 fastapi-mail
 scikit-learn
 numpy
+slowapi
