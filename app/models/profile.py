@@ -12,5 +12,6 @@ class UserProfile(Base):
     industry = Column(String, nullable=True)
     country = Column(String, nullable=True)
     skills = Column(String, nullable=True)      # comma-separated for now
+    bio = Column(String, nullable=True)
 
     user = relationship("User", backref="profile")
