@@ -7,6 +7,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 import secrets
+import hashlib
 from datetime import datetime
 from sqlalchemy.orm import Session
 
@@ -93,3 +94,9 @@ def verify_password_reset_token_db(db: Session, token: str) -> dict | None:
         "user_id": reset_token.user_id,
         "token_id": reset_token.id
     }
+    
+def generate_refresh_token() -> str:
+    return secrets.token_urlsafe(48)
+
+def hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()

@@ -86,7 +86,7 @@ from app.core.config import settings
 from app.db.database import Base
 
 # Import every model so Base.metadata knows about all tables.
-from app.models import user
+from app.models import user, user_session
 from app.models import opportunity
 from app.models import recommendation
 from app.models import notification
