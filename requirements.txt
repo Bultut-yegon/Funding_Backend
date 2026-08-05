@@ -20,3 +20,4 @@ numpy
 google-genai
 groq
 slowapi
+sentry-sdk[fastapi]

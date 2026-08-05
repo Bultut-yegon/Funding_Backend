@@ -36,6 +36,16 @@ async def lifespan(app: FastAPI):
     yield
 
 # Base.metadata.create_all(bind=engine)
+import sentry_sdk
+from app.core.config import settings
+
+if settings.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.ENVIRONMENT,
+        traces_sample_rate=0.2,
+        send_default_pii=False,
+    )
 
 app = FastAPI(title="Funding Platform API", lifespan=lifespan)
 

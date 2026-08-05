@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
 
     PASSWORD_RESET_REQUESTS_PER_HOUR: int = 3
+    LOGIN_ATTEMPTS_PER_HOUR: int = 10
     
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 30
     # FRONTEND_URL: list[str] = ["http://localhost:3000","https://funding-frontend-orcin.vercel.app"]
@@ -22,6 +23,7 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
     GROQ_API_KEY: str = ""
+    SENTRY_DSN: str = ""
 
 
     class Config:

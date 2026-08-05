@@ -1,10 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request,Response
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 import uuid
-from fastapi import Response, Request
 from app.models.user_session import UserSession
 from app.core.config import settings
 from app.core.security import generate_refresh_token, hash_token, get_current_user
@@ -26,11 +25,9 @@ from app.core.security import (
     generate_password_reset_token,
     verify_password_reset_token_db,
 )
-from app.core.config import settings
 from app.services.email_service import send_password_reset_email
 
-# import secrets
-# from app.services.notification_service import send_password_reset_email
+
 
 
 RESET_TOKEN_EXPIRE_MINUTES = 30
@@ -85,6 +82,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
+@limiter.limit(f"{settings.LOGIN_ATTEMPTS_PER_HOUR}/hour")
 def login(credentials: UserLogin, request: Request, response: Response, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == credentials.email).first()
     if not user or not verify_password(credentials.password, user.password_hash):
@@ -165,7 +163,7 @@ def logout_all(
 
 
 @router.post("/password-reset/request")
-@limiter.limit("3/hour")
+@limiter.limit(f"{settings.PASSWORD_RESET_REQUESTS_PER_HOUR}/hour")
 async def request_password_reset(
     request: Request,
     data: PasswordResetRequest,
