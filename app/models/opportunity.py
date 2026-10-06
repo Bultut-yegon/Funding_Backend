@@ -11,3 +11,4 @@ class Opportunity(Base):
     source = Column(String)
     deadline = Column(DateTime, nullable=True)
     url = Column(String)
+    eligibility_criteria = Column(Text, nullable=True)

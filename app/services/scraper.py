@@ -5,8 +5,9 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from app.models.opportunity import Opportunity
 from app.ml.classifier import classify_opportunity
+from app.ml.enrichment import enrich_opportunity
 
-#1. Opportunity Desk RSS ──────────────────────────────────────────────────
+#1. Opportunity Desk RSS 
 
 FEEDS = [
     "https://opportunitydesk.org/feed/",
@@ -34,15 +35,27 @@ def scrape_rss_feeds(db: Session):
                 if existing:
                     continue
 
-                category = classify_opportunity(title, description)
+                # category = classify_opportunity(title, description)
+
+                # opp = Opportunity(
+                #     title=title,
+                #     description=description,
+                #     category=category,
+                #     source=source,
+                #     url=url,
+                #     deadline=None,
+                # )
+                
+                enrichment = enrich_opportunity(title, description)
 
                 opp = Opportunity(
                     title=title,
                     description=description,
-                    category=category,
+                    category=enrichment["category"],
                     source=source,
                     url=url,
-                    deadline=None,
+                    deadline=enrichment["deadline"],
+                    eligibility_criteria=enrichment["eligibility"],
                 )
                 db.add(opp)
                 added += 1
@@ -84,15 +97,27 @@ def scrape_reliefweb(db: Session):
             if existing:
                 continue
 
-            category = classify_opportunity(title, description)
+            # category = classify_opportunity(title, description)
 
+            # opp = Opportunity(
+            #     title=title,
+            #     description=description,
+            #     category=category,
+            #     source="ReliefWeb / UN",
+            #     url=opp_url,
+            #     deadline=None,
+            # )
+            
+            
+            enrichment = enrich_opportunity(title, description)
             opp = Opportunity(
                 title=title,
                 description=description,
-                category=category,
-                source="ReliefWeb / UN",
-                url=opp_url,
-                deadline=None,
+                category=enrichment["category"],
+                source=source,
+                url=url,
+                deadline=enrichment["deadline"],
+                eligibility_criteria=enrichment["eligibility"],
             )
             db.add(opp)
             added += 1
@@ -124,15 +149,17 @@ def scrape_grants_gov(db: Session):
             if existing:
                 continue
 
-            category = classify_opportunity(title, description)
-
+            # Enrich the opportunity
+            enrichment = enrich_opportunity(title, description)
+            
             opp = Opportunity(
-                title=title,
-                description=description,
-                category=category,
-                source="Grants.gov",
-                url=opp_url,
-                deadline=None,
+                    title=title,
+                    description=description,
+                    category=enrichment["category"],
+                    source=source,
+                    url=url,
+                    deadline=enrichment["deadline"],
+                    eligibility_criteria=enrichment["eligibility"],
             )
             db.add(opp)
             added += 1
@@ -144,7 +171,7 @@ def scrape_grants_gov(db: Session):
     return added
 
 
-# ── Master runner ─────────────────────────────────────────────────────────────
+#  Master runner
 
 def run_all_scrapers(db: Session):
     print("Starting scrapers...")

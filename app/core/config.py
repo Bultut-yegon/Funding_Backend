@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GROQ_API_KEY: str = ""
     SENTRY_DSN: str = ""
+    # Enable expiry cleanup
+    ENABLE_EXPIRY_CLEANUP: bool = False
 
 
     class Config:

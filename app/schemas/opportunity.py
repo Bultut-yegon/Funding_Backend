@@ -10,6 +10,8 @@ class OpportunityOut(BaseModel):
     source: Optional[str]
     deadline: Optional[datetime]
     url: Optional[str]
+    eligibility_criteria: Optional[str]
+
 
     class Config:
         from_attributes = True
@@ -21,3 +23,4 @@ class OpportunityCreate(BaseModel):
     source: Optional[str] = None
     deadline: Optional[datetime] = None
     url: Optional[str] = None
+    eligibility_criteria: Optional[str] = None
