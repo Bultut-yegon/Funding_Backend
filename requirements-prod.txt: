@@ -18,3 +18,4 @@ fastapi-mail
 scikit-learn
 numpy
 slowapi
+psycopg[binary]

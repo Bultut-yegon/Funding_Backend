@@ -21,3 +21,4 @@ google-genai
 groq
 slowapi
 sentry-sdk[fastapi]
+psycopg[binary]
