@@ -17,6 +17,9 @@ def run():
 
         for i, opp in enumerate(opportunities, start=1):
             result = enrich_opportunity(opp.title, opp.description or "")
+            if result.get("failed"):
+                print(f"[{i}/{len(opportunities)}] SKIPPED (enrichment failed): {opp.title[:60]}")
+                continue
             opp.category = result["category"]
             opp.country = result["country"]
             opp.eligibility_criteria = result["eligibility"]

@@ -19,7 +19,7 @@ def enrich_opportunity(title: str, description: str) -> dict:
     reading the actual meaning of the text instead of counting keywords.
     Falls back to safe defaults if the AI call fails for any reason.
     """
-    fallback = {"category": "General", "eligibility": None, "deadline": None, "country": None}
+    fallback = {"category": "General", "eligibility": None, "deadline": None, "country": None, "failed": True}
 
     if not settings.GROQ_API_KEY:
         return fallback
@@ -42,9 +42,14 @@ Respond in this exact JSON format with no extra text:
         response = client.chat.completions.create(
             model="openai/gpt-oss-120b",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=300,
+            max_tokens=2000,
+            response_format={"type": "json_object"},
         )
-        text = response.choices[0].message.content
+        choice = response.choices[0]
+        text = choice.message.content or ""
+        if not text.strip():
+            print("Enrichment error: empty response (finish_reason={choice.finish_reason}) for: {title[:60]}")
+            return fallback
         start = text.find("{")
         end = text.rfind("}") + 1
         result = json.loads(text[start:end])
@@ -66,6 +71,7 @@ Respond in this exact JSON format with no extra text:
             "eligibility": result.get("eligibility") or None,
             "deadline": deadline,
             "country": result.get("country") or None,
+            "failed": False,
         }
     except Exception as e:
         print(f"Enrichment error: {e}")
