@@ -12,3 +12,4 @@ class Opportunity(Base):
     deadline = Column(DateTime, nullable=True)
     url = Column(String)
     eligibility_criteria = Column(Text, nullable=True)
+    country = Column(String, nullable=True)

@@ -24,3 +24,4 @@ class OpportunityCreate(BaseModel):
     deadline: Optional[datetime] = None
     url: Optional[str] = None
     eligibility_criteria: Optional[str] = None
+    country: Optional[str] = None

@@ -160,6 +160,7 @@ def scrape_grants_gov(db: Session):
                     url=url,
                     deadline=enrichment["deadline"],
                     eligibility_criteria=enrichment["eligibility"],
+                    country=enrichment["country"],
             )
             db.add(opp)
             added += 1

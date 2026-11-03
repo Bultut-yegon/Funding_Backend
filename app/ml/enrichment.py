@@ -19,7 +19,7 @@ def enrich_opportunity(title: str, description: str) -> dict:
     reading the actual meaning of the text instead of counting keywords.
     Falls back to safe defaults if the AI call fails for any reason.
     """
-    fallback = {"category": "General", "eligibility": None, "deadline": None}
+    fallback = {"category": "General", "eligibility": None, "deadline": None, "country": None}
 
     if not settings.GROQ_API_KEY:
         return fallback
@@ -34,6 +34,7 @@ Respond in this exact JSON format with no extra text:
   "category": "<one of: Scholarships, Research Grants, Startup Funding, NGO Funding, Government Tenders, General>",
   "eligibility": "<a short 1-3 sentence plain-English summary of who can apply and what is required, based only on what the description states. If no eligibility information is present, use null>",
   "deadline": "<the application deadline as YYYY-MM-DD if a specific date is stated in the text, otherwise null>"
+  "country": "<the specific country this opportunity is for, e.g. 'Kenya', if one is clearly stated or strongly implied. If open to a region, use that region, e.g. 'East Africa' or 'Sub-Saharan Africa'. If open worldwide with no restriction, use 'Global'. If not stated or genuinely unclear, use null>"
 }}"""
 
     try:
@@ -64,6 +65,7 @@ Respond in this exact JSON format with no extra text:
             "category": category,
             "eligibility": result.get("eligibility") or None,
             "deadline": deadline,
+            "country": result.get("country") or None,
         }
     except Exception as e:
         print(f"Enrichment error: {e}")

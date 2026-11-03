@@ -21,6 +21,7 @@ router = APIRouter()
 @router.get("/", response_model=List[OpportunityOut])
 def list_opportunities(
     category: Optional[str] = None,
+    country: Optional[str] = None,
     search: Optional[str] = Query(None),
     skip: int = 0,
     limit: int = 20,
@@ -29,12 +30,15 @@ def list_opportunities(
     query = db.query(Opportunity)
     if category:
         query = query.filter(Opportunity.category == category)
+    if country:
+        query = query.filter(Opportunity.country.ilike(f"%{country}%"))
     if search:
         like = f"%{search}%"
         query = query.filter(or_(
             Opportunity.title.ilike(like),
             Opportunity.description.ilike(like),
             Opportunity.source.ilike(like),
+            Opportunity.country.ilike(like),
         ))
     return query.offset(skip).limit(limit).all()
 
