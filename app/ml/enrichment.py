@@ -45,7 +45,7 @@ Respond in this exact JSON format with no extra text:
   "category": "<one of: Scholarships, Research Grants, Startup Funding, NGO Funding, Government Tenders, Fellowships, General>",
   "eligibility": "<a short 1-3 sentence plain-English summary of who can apply and what is required, based only on what the description states. If no eligibility information is present, use null>",
   "deadline": "<the application deadline as YYYY-MM-DD if a specific date is stated in the text, otherwise null>"
-  "country": "<the specific country this opportunity is for, e.g. 'Kenya', if one is clearly stated or strongly implied. If open to a region, use that region, e.g. 'East Africa' or 'Sub-Saharan Africa'. If open worldwide with no restriction, use 'Global'. If not stated or genuinely unclear, use null>"
+  "country": "<the country or region whose residents or organisations are eligible to apply, NOT where the program is hosted. Use a specific country (e.g. 'Kenya') if applications are limited to it, a region (e.g. 'East Africa', 'Sub-Saharan Africa') if limited to a region, or 'Global' if open worldwide. Use null if the text does not say>"
 }}"""
 
     try:
