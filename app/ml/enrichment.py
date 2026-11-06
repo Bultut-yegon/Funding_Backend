@@ -9,6 +9,7 @@ VALID_CATEGORIES = [
     "Startup Funding",
     "NGO Funding",
     "Government Tenders",
+    "Fellowships",
     "General",
 ]
 
@@ -24,14 +25,24 @@ def enrich_opportunity(title: str, description: str) -> dict:
     if not settings.GROQ_API_KEY:
         return fallback
 
-    prompt = f"""You are analyzing a funding opportunity listing (scholarship, grant, tender, or fellowship).
+    prompt = f"""You are analyzing a funding opportunity listing (scholarship, grant, tender, fellowship, or similar).
 
 TITLE: {title}
 DESCRIPTION: {description}
 
+CATEGORY DEFINITIONS:
+- Scholarships: funding for a person's studies (tuition, degree programs, student awards)
+- Research Grants: funding for a specific research project or research work
+- Fellowships: competitive fellowship, residency, internship or leadership programs for individuals, usually with a stipend or placement
+- Startup Funding: grants, accelerators or investment for businesses and founders
+- NGO Funding: grants or calls for non-profits, civil society and community organisations
+- Government Tenders: procurement notices and contracts to supply goods or services to a government body
+- General: does not clearly fit any of the above
+Choose the category from the nature of the opportunity itself, not from incidental words in the text.
+
 Respond in this exact JSON format with no extra text:
 {{
-  "category": "<one of: Scholarships, Research Grants, Startup Funding, NGO Funding, Government Tenders, General>",
+  "category": "<one of: Scholarships, Research Grants, Startup Funding, NGO Funding, Government Tenders, Fellowships, General>",
   "eligibility": "<a short 1-3 sentence plain-English summary of who can apply and what is required, based only on what the description states. If no eligibility information is present, use null>",
   "deadline": "<the application deadline as YYYY-MM-DD if a specific date is stated in the text, otherwise null>"
   "country": "<the specific country this opportunity is for, e.g. 'Kenya', if one is clearly stated or strongly implied. If open to a region, use that region, e.g. 'East Africa' or 'Sub-Saharan Africa'. If open worldwide with no restriction, use 'Global'. If not stated or genuinely unclear, use null>"
