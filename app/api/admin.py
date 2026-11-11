@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException,BackgroundTasks, Header
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List
@@ -10,6 +10,8 @@ from app.models.bookmark import Bookmark
 from app.models.notification import Notification
 from app.schemas.opportunity import OpportunityOut, OpportunityCreate
 from app.schemas.user import UserOut
+import secrets
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -98,3 +100,12 @@ def trigger_scrape(
     from app.services.scraper import run_all_scrapers
     total = run_all_scrapers(db)
     return {"message": "Scraping complete", "new_opportunities": total}
+
+
+@router.post("/cron/scrape")
+def cron_scrape(background_tasks: BackgroundTasks, x_cron_secret: str = Header(default="")):
+    if not settings.CRON_SECRET or not secrets.compare_digest(x_cron_secret, settings.CRON_SECRET):
+        raise HTTPException(status_code=403, detail="Forbidden")
+    from app.services.scheduler import scrape_job
+    background_tasks.add_task(scrape_job)
+    return {"message": "Scrape started"}

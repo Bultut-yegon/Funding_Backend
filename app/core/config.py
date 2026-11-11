@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     SENTRY_DSN: str = ""
     # Enable expiry cleanup
     ENABLE_EXPIRY_CLEANUP: bool = False
+    CRON_SECRET: str = ""
 
 
     class Config:
