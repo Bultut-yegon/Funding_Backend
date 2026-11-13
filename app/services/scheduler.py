@@ -25,13 +25,21 @@ def scrape_job():
 #     scheduler.start()
 #     print("Scheduler started — scraping every 6 hours, session cleanup daily.")
     
+# def start_scheduler():
+#     scheduler.add_job(scrape_job, "interval", hours=6, id="scrape_job")
+#     scheduler.add_job(session_cleanup_job, "interval", hours=24, id="session_cleanup_job")
+#     if settings.ENABLE_EXPIRY_CLEANUP:
+#         scheduler.add_job(expired_cleanup_job, "interval", hours=24, id="expired_cleanup_job")
+#     scheduler.start()
+#     print("Scheduler started.")
+
+
 def start_scheduler():
-    scheduler.add_job(scrape_job, "interval", hours=6, id="scrape_job")
     scheduler.add_job(session_cleanup_job, "interval", hours=24, id="session_cleanup_job")
     if settings.ENABLE_EXPIRY_CLEANUP:
         scheduler.add_job(expired_cleanup_job, "interval", hours=24, id="expired_cleanup_job")
     scheduler.start()
-    print("Scheduler started.")
+    print("Scheduler started. Scraping is triggered externally.")
 
   
     
