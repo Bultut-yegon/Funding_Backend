@@ -20,11 +20,7 @@ def scrape_job():
     finally:
         db.close()
 
-# def start_scheduler():
-#     scheduler.add_job(session_cleanup_job, "interval", hours=24, id="session_cleanup_job")
-#     scheduler.start()
-#     print("Scheduler started — scraping every 6 hours, session cleanup daily.")
-    
+
 # def start_scheduler():
 #     scheduler.add_job(scrape_job, "interval", hours=6, id="scrape_job")
 #     scheduler.add_job(session_cleanup_job, "interval", hours=24, id="session_cleanup_job")
