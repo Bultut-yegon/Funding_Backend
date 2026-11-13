@@ -34,6 +34,18 @@ def get_recommendations(
     opportunities: List[Opportunity],
     top_k: int = 10,
 ) -> List[dict]:
+    if not any(
+        value and value.strip()
+        for value in (
+            profile.interests,
+            profile.skills,
+            profile.industry,
+            profile.education_level,
+            profile.country,
+        )
+    ):
+        return []
+
     if not opportunities:
         return []
 
