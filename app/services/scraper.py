@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from sqlalchemy.orm import Session
 from app.models.opportunity import Opportunity
-from app.ml.classifier import classify_opportunity
 from app.ml.enrichment import enrich_opportunity
 
 #1. Opportunity Desk RSS 
@@ -15,6 +14,33 @@ FEEDS = [
     "https://www.afterschoolafrica.com/feed/",
 ]
 
+
+def _description(value: str, limit: int = 12000) -> str:
+    """Convert feed/API HTML to enough plain text for requirements extraction."""
+    return BeautifulSoup(value or "", "html.parser").get_text(" ", strip=True)[:limit]
+
+
+def _add_opportunity(db: Session, *, title: str, description: str, url: str, source: str) -> bool:
+    if not title or not url or db.query(Opportunity).filter(Opportunity.url == url).first():
+        return False
+
+    enrichment = enrich_opportunity(title, description)
+    if enrichment["failed"]:
+        print(f"Enrichment unavailable; storing un-enriched opportunity: {title[:80]}")
+
+    db.add(Opportunity(
+        title=title,
+        description=description,
+        category=enrichment["category"],
+        source=source,
+        url=url,
+        deadline=enrichment["deadline"],
+        eligibility_criteria=enrichment["eligibility"],
+        country=enrichment["country"],
+    ))
+    return True
+
+
 def scrape_rss_feeds(db: Session):
     added = 0
     for feed_url in FEEDS:
@@ -22,46 +48,17 @@ def scrape_rss_feeds(db: Session):
             feed = feedparser.parse(feed_url)
             for entry in feed.entries:
                 title = entry.get("title", "").strip()
-                description = BeautifulSoup(
-                    entry.get("summary", ""), "html.parser"
-                ).get_text()[:500]
+                description = _description(entry.get("summary", ""))
                 url = entry.get("link", "")
                 source = feed.feed.get("title", feed_url)
 
-                if not title or not url:
-                    continue
-
-                existing = db.query(Opportunity).filter(Opportunity.url == url).first()
-                if existing:
-                    continue
-
-                # category = classify_opportunity(title, description)
-
-                # opp = Opportunity(
-                #     title=title,
-                #     description=description,
-                #     category=category,
-                #     source=source,
-                #     url=url,
-                #     deadline=None,
-                # )
-                
-                enrichment = enrich_opportunity(title, description)
-
-                opp = Opportunity(
-                    title=title,
-                    description=description,
-                    category=enrichment["category"],
-                    source=source,
-                    url=url,
-                    deadline=enrichment["deadline"],
-                    eligibility_criteria=enrichment["eligibility"],
+                added += _add_opportunity(
+                    db, title=title, description=description, url=url, source=source
                 )
-                db.add(opp)
-                added += 1
 
             db.commit()
         except Exception as e:
+            db.rollback()
             print(f"RSS feed error ({feed_url}): {e}")
 
     return added
@@ -80,50 +77,26 @@ def scrape_reliefweb(db: Session):
 
     try:
         response = httpx.get(url, params=params, timeout=15)
+        response.raise_for_status()
         data = response.json()
 
         for item in data.get("data", []):
             fields = item.get("fields", {})
             title = fields.get("title", "").strip()
-            description = BeautifulSoup(
-                fields.get("body", ""), "html.parser"
-            ).get_text()[:500]
+            description = _description(fields.get("body", ""))
             opp_url = fields.get("url", "")
 
-            if not title or not opp_url:
-                continue
-
-            existing = db.query(Opportunity).filter(Opportunity.url == opp_url).first()
-            if existing:
-                continue
-
-            # category = classify_opportunity(title, description)
-
-            # opp = Opportunity(
-            #     title=title,
-            #     description=description,
-            #     category=category,
-            #     source="ReliefWeb / UN",
-            #     url=opp_url,
-            #     deadline=None,
-            # )
-            
-            
-            enrichment = enrich_opportunity(title, description)
-            opp = Opportunity(
+            added += _add_opportunity(
+                db,
                 title=title,
                 description=description,
-                category=enrichment["category"],
-                source=source,
-                url=url,
-                deadline=enrichment["deadline"],
-                eligibility_criteria=enrichment["eligibility"],
+                url=opp_url,
+                source="ReliefWeb / UN",
             )
-            db.add(opp)
-            added += 1
 
         db.commit()
     except Exception as e:
+        db.rollback()
         print(f"ReliefWeb API error: {e}")
 
     return added
@@ -139,34 +112,20 @@ def scrape_grants_gov(db: Session):
         feed = feedparser.parse(url)
         for entry in feed.entries:
             title = entry.get("title", "").strip()
-            description = entry.get("summary", "")[:500]
+            description = _description(entry.get("summary", ""))
             opp_url = entry.get("link", "")
 
-            if not title or not opp_url:
-                continue
-
-            existing = db.query(Opportunity).filter(Opportunity.url == opp_url).first()
-            if existing:
-                continue
-
-            # Enrich the opportunity
-            enrichment = enrich_opportunity(title, description)
-            
-            opp = Opportunity(
-                    title=title,
-                    description=description,
-                    category=enrichment["category"],
-                    source=source,
-                    url=url,
-                    deadline=enrichment["deadline"],
-                    eligibility_criteria=enrichment["eligibility"],
-                    country=enrichment["country"],
+            added += _add_opportunity(
+                db,
+                title=title,
+                description=description,
+                url=opp_url,
+                source="Grants.gov",
             )
-            db.add(opp)
-            added += 1
 
         db.commit()
     except Exception as e:
+        db.rollback()
         print(f"Grants.gov error: {e}")
 
     return added

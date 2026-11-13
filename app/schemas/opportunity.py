@@ -11,6 +11,7 @@ class OpportunityOut(BaseModel):
     deadline: Optional[datetime]
     url: Optional[str]
     eligibility_criteria: Optional[str]
+    country: Optional[str]
 
 
     class Config:

@@ -16,7 +16,7 @@ VALID_CATEGORIES = [
 
 def enrich_opportunity(title: str, description: str) -> dict:
     """
-    Classifies an opportunity and extracts eligibility + deadline using Groq,
+    Classifies an opportunity and extracts eligibility/requirements + deadline using Groq,
     reading the actual meaning of the text instead of counting keywords.
     Falls back to safe defaults if the AI call fails for any reason.
     """
@@ -25,7 +25,7 @@ def enrich_opportunity(title: str, description: str) -> dict:
     if not settings.GROQ_API_KEY:
         return fallback
 
-    prompt = f"""You are analyzing a funding opportunity listing (scholarship, grant, tender, fellowship, or similar).
+    prompt = f"""You are analyzing a funding opportunity listing (scholarship, grant, government tender, fellowship, or similar).
 
 TITLE: {title}
 DESCRIPTION: {description}
@@ -43,8 +43,8 @@ Choose the category from the nature of the opportunity itself, not from incident
 Respond in this exact JSON format with no extra text:
 {{
   "category": "<one of: Scholarships, Research Grants, Startup Funding, NGO Funding, Government Tenders, Fellowships, General>",
-  "eligibility": "<a short 1-3 sentence summary of who can apply and any stated requirements, using only what the description says. Do not restate the title or say only that people 'apply'. If the description gives no specific eligibility information, use null>",
-  "deadline": "<the application deadline as YYYY-MM-DD if a specific date is stated in the text, otherwise null>"
+  "eligibility": "<a clear 1-3 sentence summary of who can apply and the stated requirements, using only what the description says. For Government Tenders, include bidder type, registration/licensing, technical or financial qualifications, documents, bid security, delivery/location, and submission instructions when stated. Do not restate the title or say only that people 'apply'. If the description gives no specific eligibility or requirements, use null>",
+  "deadline": "<the application deadline as YYYY-MM-DD if a specific date is stated in the text, otherwise null>",
   "country": "<the country or region whose residents or organisations are eligible to apply, NOT where the program is hosted. Use a specific country (e.g. 'Kenya') if applications are limited to it, a region (e.g. 'East Africa', 'Sub-Saharan Africa') if limited to a region, or 'Global' if open worldwide. Use null if the text does not say>"
 }}"""
 
@@ -59,7 +59,10 @@ Respond in this exact JSON format with no extra text:
         choice = response.choices[0]
         text = choice.message.content or ""
         if not text.strip():
-            print("Enrichment error: empty response (finish_reason={choice.finish_reason}) for: {title[:60]}")
+            print(
+                f"Enrichment error: empty response "
+                f"(finish_reason={choice.finish_reason}) for: {title[:60]}"
+            )
             return fallback
         start = text.find("{")
         end = text.rfind("}") + 1

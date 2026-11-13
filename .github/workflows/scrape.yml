@@ -1,14 +1,22 @@
-name: Scheduled  scrape
+name: Scheduled scrape
+
 on:
   schedule:
     - cron: '0 */6 * * *' # Runs every 6 hours
   workflow_dispatch:
-  jobs:
-    trigger:
-      runs-on: ubuntu-latest
-      steps:
-        - name: Trigger scrape endpoint
-          run: |
-            curl --fail --max-time 180 --retry 2 --retry-delay 20 -X POST \
-            "${{ secrets.API_BASE_URL }}/api/admin/cron/scrape" \
-            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}"
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger scrape endpoint
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          test -n "$API_BASE_URL" || { echo "API_BASE_URL secret is missing"; exit 1; }
+          test -n "$CRON_SECRET" || { echo "CRON_SECRET secret is missing"; exit 1; }
+          curl --fail --show-error --max-time 180 --retry 2 --retry-delay 20 \
+            -X POST "$API_BASE_URL/api/admin/cron/scrape" \
+            -H "X-Cron-Secret: $CRON_SECRET"
