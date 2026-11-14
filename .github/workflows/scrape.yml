@@ -19,6 +19,7 @@ jobs:
           test -n "$CRON_SECRET" || { echo "CRON_SECRET secret is missing"; exit 1; }
           API_BASE_URL="${API_BASE_URL%/}"
           API_BASE_URL="${API_BASE_URL%/api}"
+          CRON_SECRET="$(printf '%s' "$CRON_SECRET" | tr -d '\r\n')"
           SCRAPE_URL="$API_BASE_URL/api/admin/cron/scrape"
           echo "Calling $SCRAPE_URL"
           curl --fail --show-error --max-time 180 --retry 2 --retry-delay 20 \

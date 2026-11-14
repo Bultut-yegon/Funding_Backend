@@ -104,7 +104,9 @@ def trigger_scrape(
 
 @router.post("/cron/scrape")
 def cron_scrape(background_tasks: BackgroundTasks, x_cron_secret: str = Header(default="")):
-    if not settings.CRON_SECRET or not secrets.compare_digest(x_cron_secret, settings.CRON_SECRET):
+    configured_secret = settings.CRON_SECRET.strip()
+    provided_secret = x_cron_secret.strip()
+    if not configured_secret or not secrets.compare_digest(provided_secret, configured_secret):
         raise HTTPException(status_code=403, detail="Forbidden")
     from app.services.scheduler import scrape_job
     background_tasks.add_task(scrape_job)
