@@ -45,7 +45,7 @@ def recommend(
     if not profile or not _has_recommendation_preferences(profile):
         raise HTTPException(
             status_code=400,
-            detail="Please update your interests page before viewing recommendations",
+            detail="Please update your profile before viewing recommendations",
         )
 
     opportunities = db.query(Opportunity).all()
