@@ -17,6 +17,7 @@ from app.models.opportunity import Opportunity
 from app.models.profile import UserProfile
 from app.ml.recommender import get_recommendations
 from app.schemas.recommendation import RecommendationOut
+from app.services.profile_normalization import normalize_value
 
 router = APIRouter()
 
@@ -24,14 +25,8 @@ router = APIRouter()
 def _has_recommendation_preferences(profile: UserProfile) -> bool:
     """Return whether the user has supplied at least one matching preference."""
     return any(
-        value and value.strip()
-        for value in (
-            profile.interests,
-            profile.skills,
-            profile.industry,
-            profile.education_level,
-            profile.country,
-        )
+        normalize_value(getattr(profile, field), field=field)
+        for field in ("interests", "skills", "industry", "education_level", "country")
     )
 
 

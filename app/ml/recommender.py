@@ -1,22 +1,59 @@
-import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from typing import List
+from typing import List, Optional
 from app.models.opportunity import Opportunity
 from app.models.profile import UserProfile
+from app.services.profile_normalization import normalize_value, normalized_terms
+
+MIN_RELEVANCE_SCORE = 0.18
+FIELD_WEIGHTS = {
+    "interests": 0.30,
+    "skills": 0.30,
+    "industry": 0.25,
+    "education_level": 0.10,
+    "country": 0.05,
+}
+GLOBAL_COUNTRIES = {"global", "worldwide", "international", "any country", "all countries"}
+REGION_MEMBERSHIP = {
+    "kenya": {"africa", "east africa", "sub-saharan africa"},
+    "nigeria": {"africa", "west africa", "sub-saharan africa"},
+    "ghana": {"africa", "west africa", "sub-saharan africa"},
+}
+
+
+def _text_score(user_value: Optional[str], opportunity_text: str) -> float:
+    value = normalize_value(user_value)
+    if not value:
+        return 0.0
+    vectorizer = TfidfVectorizer(stop_words="english")
+    try:
+        matrix = vectorizer.fit_transform([value, opportunity_text])
+    except ValueError:
+        return 0.0
+    return float(cosine_similarity(matrix[0], matrix[1])[0][0])
+
+
+def _country_is_eligible(profile_country: Optional[str], opportunity_country: Optional[str]) -> bool:
+    profile_terms = normalized_terms(profile_country, field="country")
+    opportunity_terms = normalized_terms(opportunity_country, field="country")
+    if not profile_terms or not opportunity_terms:
+        return True
+    if opportunity_terms & GLOBAL_COUNTRIES:
+        return True
+    for country in profile_terms:
+        if country in opportunity_terms or opportunity_terms & REGION_MEMBERSHIP.get(country, set()):
+            return True
+    return False
 
 def build_user_text(profile: UserProfile) -> str:
     parts = []
-    if profile.interests:
-        parts.append(f"Interests: {profile.interests}")
-    if profile.industry:
-        parts.append(f"Industry: {profile.industry}")
-    if profile.skills:
-        parts.append(f"Skills: {profile.skills}")
-    if profile.education_level:
-        parts.append(f"Education: {profile.education_level}")
-    if profile.country:
-        parts.append(f"Country: {profile.country}")
+    for field, label in (
+        ("interests", "Interests"), ("industry", "Industry"),
+        ("skills", "Skills"), ("education_level", "Education"), ("country", "Country"),
+    ):
+        value = normalize_value(getattr(profile, field), field=field)
+        if value:
+            parts.append(f"{label}: {value}")
     return ". ".join(parts) if parts else "general funding opportunities"
 
 def build_opportunity_text(opp: Opportunity) -> str:
@@ -27,6 +64,10 @@ def build_opportunity_text(opp: Opportunity) -> str:
         parts.append(opp.description)
     if opp.category:
         parts.append(f"Category: {opp.category}")
+    if opp.eligibility_criteria:
+        parts.append(opp.eligibility_criteria)
+    if opp.country:
+        parts.append(f"Country: {opp.country}")
     return ". ".join(parts)
 
 def get_recommendations(
@@ -34,38 +75,25 @@ def get_recommendations(
     opportunities: List[Opportunity],
     top_k: int = 10,
 ) -> List[dict]:
-    if not any(
-        value and value.strip()
-        for value in (
-            profile.interests,
-            profile.skills,
-            profile.industry,
-            profile.education_level,
-            profile.country,
-        )
-    ):
+    if not any(normalize_value(getattr(profile, field), field=field)
+               for field in FIELD_WEIGHTS):
         return []
 
     if not opportunities:
         return []
 
-    user_text = build_user_text(profile)
     opp_texts = [build_opportunity_text(opp) for opp in opportunities]
-
-    corpus = [user_text] + opp_texts
-    vectorizer = TfidfVectorizer(stop_words="english")
-    tfidf_matrix = vectorizer.fit_transform(corpus)
-
-    user_vector = tfidf_matrix[0]
-    opp_vectors = tfidf_matrix[1:]
-
-    scores = cosine_similarity(user_vector, opp_vectors)[0]
-
-    ranked = sorted(
-        zip(opportunities, scores),
-        key=lambda x: x[1],
-        reverse=True,
-    )
+    ranked = []
+    for opp, opp_text in zip(opportunities, opp_texts):
+        if not _country_is_eligible(profile.country, opp.country):
+            continue
+        score = sum(
+            weight * _text_score(getattr(profile, field), opp_text)
+            for field, weight in FIELD_WEIGHTS.items()
+        )
+        if score >= MIN_RELEVANCE_SCORE:
+            ranked.append((opp, score))
+    ranked.sort(key=lambda item: item[1], reverse=True)
 
     return [
         {"opportunity": opp, "score": float(score)}
