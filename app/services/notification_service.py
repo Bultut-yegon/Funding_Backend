@@ -4,7 +4,7 @@ from app.models.notification import Notification
 from app.models.user import User
 from app.models.opportunity import Opportunity
 from app.models.profile import UserProfile
-from app.ml.recommender import get_recommendations
+from app.services.recommendation_service import get_recommendations
 from sqlalchemy.orm import Session
 
 conf = ConnectionConfig(

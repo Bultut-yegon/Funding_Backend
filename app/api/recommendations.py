@@ -15,7 +15,7 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.models.opportunity import Opportunity
 from app.models.profile import UserProfile
-from app.ml.recommender import get_recommendations
+from app.services.recommendation_service import get_recommendations
 from app.schemas.recommendation import RecommendationOut
 from app.services.profile_normalization import normalize_value
 
