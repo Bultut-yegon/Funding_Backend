@@ -5,6 +5,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from app.models.opportunity import Opportunity
 from app.ml.enrichment import enrich_opportunity
+from app.services.deadlines import stated_deadline, is_expired
 
 #1. Opportunity Desk RSS 
 
@@ -21,12 +22,23 @@ def _description(value: str, limit: int = 12000) -> str:
 
 
 def _add_opportunity(db: Session, *, title: str, description: str, url: str, source: str) -> bool:
-    if not title or not url or db.query(Opportunity).filter(Opportunity.url == url).first():
+    if not title or not url:
+        return False
+
+    stated = stated_deadline(description)
+    if is_expired(stated):
+        return False
+
+    if db.query(Opportunity).filter(Opportunity.url == url).first():
         return False
 
     enrichment = enrich_opportunity(title, description)
     if enrichment["failed"]:
         print(f"Enrichment unavailable; storing un-enriched opportunity: {title[:80]}")
+
+    deadline = stated or enrichment["deadline"]
+    if is_expired(deadline):
+        return False
 
     db.add(Opportunity(
         title=title,
@@ -34,7 +46,7 @@ def _add_opportunity(db: Session, *, title: str, description: str, url: str, sou
         category=enrichment["category"],
         source=source,
         url=url,
-        deadline=enrichment["deadline"],
+        deadline=deadline,
         eligibility_criteria=enrichment["eligibility"],
         country=enrichment["country"],
     ))

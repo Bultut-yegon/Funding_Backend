@@ -4,6 +4,7 @@ from typing import List, Optional
 from app.models.opportunity import Opportunity
 from app.models.profile import UserProfile
 from app.services.profile_normalization import normalize_value, normalized_terms
+from app.services.deadlines import is_expired
 
 MIN_RELEVANCE_SCORE = 0.10
 FIELD_WEIGHTS = {
@@ -109,6 +110,8 @@ def get_recommendations(
     opp_texts = [build_opportunity_text(opp) for opp in opportunities]
     ranked = []
     for opp, opp_text in zip(opportunities, opp_texts):
+        if is_expired(opp.deadline):
+            continue
         if not _country_is_eligible(profile.country, opp.country):
             continue
         score = sum(

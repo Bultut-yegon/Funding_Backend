@@ -15,6 +15,9 @@ from app.db.database import get_db
 from app.models.opportunity import Opportunity
 from app.schemas.opportunity import OpportunityOut, OpportunityCreate
 from app.services.scraper import run_all_scrapers
+from app.services.deadlines import start_of_today, is_expired
+from app.services.cleanup import delete_expired_opportunities
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -27,7 +30,9 @@ def list_opportunities(
     limit: int = 20,
     db: Session = Depends(get_db),
 ):
-    query = db.query(Opportunity)
+    query = db.query(Opportunity).filter(
+        (Opportunity.deadline.is_(None)) | (Opportunity.deadline >= start_of_today())
+    )
     if category:
         query = query.filter(Opportunity.category == category)
     if country:
@@ -44,13 +49,18 @@ def list_opportunities(
 
 @router.get("/{opportunity_id}", response_model=OpportunityOut)
 def get_opportunity(opportunity_id: int, db: Session = Depends(get_db)):
-    opp = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
+    opp = db.query(Opportunity).filter(
+        Opportunity.id == opportunity_id,
+        (Opportunity.deadline.is_(None)) | (Opportunity.deadline >= start_of_today()),
+    ).first()
     if not opp:
         raise HTTPException(status_code=404, detail="Opportunity not found")
     return opp
 
 @router.post("/", response_model=OpportunityOut)
 def create_opportunity(data: OpportunityCreate, db: Session = Depends(get_db)):
+    if is_expired(data.deadline):
+        raise HTTPException(status_code=400, detail="Expired opportunities cannot be created")
     opp = Opportunity(**data.dict())
     db.add(opp)
     db.commit()
@@ -69,4 +79,7 @@ def delete_opportunity(opportunity_id: int, db: Session = Depends(get_db)):
 @router.post("/scrape")
 def trigger_scrape(db: Session = Depends(get_db)):
     total = run_all_scrapers(db)
-    return {"message": f"Scraping complete", "new_opportunities": total}
+    cleanup = None
+    if settings.ENABLE_EXPIRY_CLEANUP:
+        cleanup = delete_expired_opportunities(db)
+    return {"message": "Scraping complete", "new_opportunities": total, "expiry_cleanup": cleanup}

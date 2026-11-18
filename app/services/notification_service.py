@@ -6,6 +6,7 @@ from app.models.opportunity import Opportunity
 from app.models.profile import UserProfile
 from app.services.recommendation_service import get_recommendations
 from sqlalchemy.orm import Session
+from app.services.deadlines import start_of_today
 
 conf = ConnectionConfig(
     MAIL_USERNAME=settings.MAIL_USERNAME,
@@ -71,7 +72,9 @@ async def send_opportunity_email(user: User, opportunities: list):
 
 async def notify_users_of_new_opportunities(db: Session):
     users = db.query(User).all()
-    opportunities = db.query(Opportunity).all()
+    opportunities = db.query(Opportunity).filter(
+        (Opportunity.deadline.is_(None)) | (Opportunity.deadline >= start_of_today())
+    ).all()
     notified = 0
 
     for user in users:

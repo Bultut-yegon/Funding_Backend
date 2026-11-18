@@ -18,6 +18,7 @@ from app.models.profile import UserProfile
 from app.services.recommendation_service import get_recommendations
 from app.schemas.recommendation import RecommendationOut
 from app.services.profile_normalization import normalize_value
+from app.services.deadlines import start_of_today
 
 router = APIRouter()
 
@@ -40,7 +41,9 @@ def recommend(
     if not profile or not _has_recommendation_preferences(profile):
         return []
 
-    opportunities = db.query(Opportunity).all()
+    opportunities = db.query(Opportunity).filter(
+        (Opportunity.deadline.is_(None)) | (Opportunity.deadline >= start_of_today())
+    ).all()
     if not opportunities:
         return []
 

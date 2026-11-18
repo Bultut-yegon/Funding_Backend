@@ -12,6 +12,8 @@ from app.schemas.opportunity import OpportunityOut, OpportunityCreate
 from app.schemas.user import UserOut
 import secrets
 from app.core.config import settings
+from app.services.deadlines import start_of_today, is_expired
+from app.services.cleanup import delete_expired_opportunities
 
 router = APIRouter()
 
@@ -21,13 +23,18 @@ def get_stats(
     admin: User = Depends(get_admin_user),
 ):
     total_users = db.query(User).count()
-    total_opportunities = db.query(Opportunity).count()
+    active_opportunities = db.query(Opportunity).filter(
+        (Opportunity.deadline.is_(None)) | (Opportunity.deadline >= start_of_today())
+    )
+    total_opportunities = active_opportunities.count()
     total_bookmarks = db.query(Bookmark).count()
     total_notifications = db.query(Notification).count()
 
     categories = db.query(
         Opportunity.category,
         func.count(Opportunity.id).label("count")
+    ).filter(
+        (Opportunity.deadline.is_(None)) | (Opportunity.deadline >= start_of_today())
     ).group_by(Opportunity.category).all()
 
     return {
@@ -65,7 +72,9 @@ def get_all_opportunities(
     db: Session = Depends(get_db),
     admin: User = Depends(get_admin_user),
 ):
-    return db.query(Opportunity).all()
+    return db.query(Opportunity).filter(
+        (Opportunity.deadline.is_(None)) | (Opportunity.deadline >= start_of_today())
+    ).all()
 
 @router.post("/opportunities", response_model=OpportunityOut)
 def create_opportunity(
@@ -73,6 +82,8 @@ def create_opportunity(
     db: Session = Depends(get_db),
     admin: User = Depends(get_admin_user),
 ):
+    if is_expired(data.deadline):
+        raise HTTPException(status_code=400, detail="Expired opportunities cannot be created")
     opp = Opportunity(**data.dict())
     db.add(opp)
     db.commit()
@@ -99,7 +110,10 @@ def trigger_scrape(
 ):
     from app.services.scraper import run_all_scrapers
     total = run_all_scrapers(db)
-    return {"message": "Scraping complete", "new_opportunities": total}
+    cleanup = None
+    if settings.ENABLE_EXPIRY_CLEANUP:
+        cleanup = delete_expired_opportunities(db)
+    return {"message": "Scraping complete", "new_opportunities": total, "expiry_cleanup": cleanup}
 
 
 @router.post("/cron/scrape")

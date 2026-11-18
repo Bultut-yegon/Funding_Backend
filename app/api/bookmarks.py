@@ -8,6 +8,7 @@ from app.models.user import User
 from app.models.bookmark import Bookmark
 from app.models.opportunity import Opportunity
 from app.schemas.bookmark import BookmarkOut, BookmarkUpdate
+from app.services.deadlines import start_of_today
 
 router = APIRouter()
 
@@ -41,7 +42,10 @@ def add_bookmark(
     if existing:
         raise HTTPException(status_code=400, detail="Already bookmarked")
 
-    opp = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
+    opp = db.query(Opportunity).filter(
+        Opportunity.id == opportunity_id,
+        (Opportunity.deadline.is_(None)) | (Opportunity.deadline >= start_of_today()),
+    ).first()
     if not opp:
         raise HTTPException(status_code=404, detail="Opportunity not found")
 
