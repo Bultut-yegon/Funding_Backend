@@ -38,14 +38,11 @@ def recommend(
 ):
     profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
     if not profile or not _has_recommendation_preferences(profile):
-        raise HTTPException(
-            status_code=400,
-            detail="Please update your profile before viewing recommendations",
-        )
+        return []
 
     opportunities = db.query(Opportunity).all()
     if not opportunities:
-        raise HTTPException(status_code=404, detail="No opportunities available yet")
+        return []
 
     results = get_recommendations(profile, opportunities, top_k=top_k)
     return results

@@ -5,7 +5,7 @@ from app.models.opportunity import Opportunity
 from app.models.profile import UserProfile
 from app.services.profile_normalization import normalize_value, normalized_terms
 
-MIN_RELEVANCE_SCORE = 0.18
+MIN_RELEVANCE_SCORE = 0.10
 FIELD_WEIGHTS = {
     "interests": 0.30,
     "skills": 0.30,
@@ -23,25 +23,49 @@ REGION_MEMBERSHIP = {
 
 def _text_score(user_value: Optional[str], opportunity_text: str) -> float:
     value = normalize_value(user_value)
+    opportunity_text = (opportunity_text or "").lower()
     if not value:
         return 0.0
-    vectorizer = TfidfVectorizer(stop_words="english")
+
+    terms = [term.strip().lower() for term in value.split(",") if term.strip()]
+    matched_terms = sum(
+        1 for term in terms
+        if term and (term in opportunity_text)
+    )
+    direct_coverage = matched_terms / len(terms) if terms else 0.0
+
+    vectorizer = TfidfVectorizer(stop_words="english", lowercase=True)
     try:
         matrix = vectorizer.fit_transform([value, opportunity_text])
+        cosine = float(cosine_similarity(matrix[0], matrix[1])[0][0])
     except ValueError:
-        return 0.0
-    return float(cosine_similarity(matrix[0], matrix[1])[0][0])
+        cosine = 0.0
+
+    return max(direct_coverage, cosine)
 
 
 def _country_is_eligible(profile_country: Optional[str], opportunity_country: Optional[str]) -> bool:
     profile_terms = normalized_terms(profile_country, field="country")
     opportunity_terms = normalized_terms(opportunity_country, field="country")
-    if not profile_terms or not opportunity_terms:
+    if not profile_terms:
         return True
-    if opportunity_terms & GLOBAL_COUNTRIES:
+    if opportunity_country is None:
         return True
+
+    opportunity_text = normalize_value(opportunity_country, field="country").lower()
+    if not opportunity_text:
+        return True
+    if opportunity_terms & GLOBAL_COUNTRIES or any(term in opportunity_text for term in GLOBAL_COUNTRIES):
+        return True
+
     for country in profile_terms:
-        if country in opportunity_terms or opportunity_terms & REGION_MEMBERSHIP.get(country, set()):
+        if country in opportunity_text:
+            return True
+        if any(region in opportunity_text for region in REGION_MEMBERSHIP.get(country, set())):
+            return True
+        if country in opportunity_terms:
+            return True
+        if opportunity_terms & REGION_MEMBERSHIP.get(country, set()):
             return True
     return False
 

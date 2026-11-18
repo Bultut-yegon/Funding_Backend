@@ -29,9 +29,13 @@ def update_profile(
         profile = UserProfile(user_id=current_user.id)
         db.add(profile)
 
-    for field, value in data.dict(exclude_unset=True).items():
+    for field, value in data.model_dump(exclude_unset=True).items():
         setattr(profile, field, value)
 
-    db.commit()
-    db.refresh(profile)
+    try:
+        db.commit()
+        db.refresh(profile)
+    except Exception:
+        db.rollback()
+        raise
     return profile

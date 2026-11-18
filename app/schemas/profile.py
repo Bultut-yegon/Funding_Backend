@@ -1,14 +1,14 @@
 from pydantic import BaseModel
 from pydantic import field_validator
-from typing import Optional
+from typing import Optional, Union
 from app.services.profile_normalization import normalize_value
 
 class ProfileUpdate(BaseModel):
-    education_level: Optional[str] = None
-    interests: Optional[str] = None
-    industry: Optional[str] = None
-    country: Optional[str] = None
-    skills: Optional[str] = None
+    education_level: Optional[Union[str, list]] = None
+    interests: Optional[Union[str, list]] = None
+    industry: Optional[Union[str, list]] = None
+    country: Optional[Union[str, list]] = None
+    skills: Optional[Union[str, list]] = None
 
     @field_validator(
         "education_level", "interests", "industry", "country", "skills",

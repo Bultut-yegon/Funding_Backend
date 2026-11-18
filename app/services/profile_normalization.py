@@ -32,10 +32,13 @@ EDUCATION_ALIASES = {
 }
 
 
-def normalize_value(value: Optional[str], *, field: str = "") -> str:
+def normalize_value(value, *, field: str = "") -> str:
     """Return a canonical, comma-separated profile value."""
     if value is None:
         return ""
+
+    if isinstance(value, (list, tuple, set)):
+        value = ",".join(str(item) for item in value)
 
     terms = []
     for raw_term in re.split(r"[,;\n]+", str(value)):
